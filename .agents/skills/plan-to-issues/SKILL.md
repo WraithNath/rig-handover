@@ -15,14 +15,39 @@ in a shell this agent can run.
    One issue per unit of work.
 3. **Stop and show the table to the human.** Publish nothing until they approve it.
 4. Ask the human what every issue here must carry (fields, labels, wording), unless it is
-   already written down in this session or in the repo.
+   already written down in this session or in the repo. The repo's answer is in
+   "What every issue carries" below.
 5. Create each issue in dependency order, so blocked-by can cite real numbers:
 
    ```sh
-   gh issue create --title "<title>" --body-file <tmp.md>
+   gh issue create --title "<title>" --label "plan:<plan>" --body-file <tmp.md>
    ```
 
 6. Record every issue URL from gh's output (not from memory) and reply with the list.
+
+## What every issue carries
+
+Agreed by the human on 2026-10-29 (plan morning-digest). Every issue is labelled
+`plan:<plan>` (the `plan:` value in `plan.md`'s frontmatter) and its body is exactly:
+
+```md
+Source: plan.md § <n>
+
+## Scope
+<what to change, which files; what is out of this issue>
+
+## Done when
+<the plan's checkable condition, word for word where it has one>
+
+## Blocked by
+<#n, or —; "#n to start; its done condition also needs #m" when they differ>
+
+## Suggested worker
+<strongest model for logic, a cheaper one for views and tests (AGENTS.md)>
+```
+
+An issue whose "Done when" waits on someone else (a review, a reply) stays open until they
+confirm. Sending is not done.
 
 Closing one, with the closing comment from AGENTS.md:
 
