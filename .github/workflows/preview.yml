@@ -1,0 +1,50 @@
+# Plan morning-digest § 3–4 (ADR 0003). Saves one rig page as a single HTML file and deploys it
+# to GitHub Pages. The file is built here and never committed, so the marker can be taken off
+# later by running this again with the LANE_MARKER secret deleted ("no marker set").
+name: preview
+
+on:
+  workflow_dispatch:
+    inputs:
+      page:
+        description: rig path to save
+        default: /digest/2026-10-28
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: corepack enable && pnpm install --frozen-lockfile=false
+      - name: Run rig and save the page
+        env:
+          LANE_MARKER: ${{ secrets.LANE_MARKER }}
+          PAGE: ${{ inputs.page }}
+          PORT: 8787
+        run: |
+          pnpm start > rig.log 2>&1 &
+          for i in $(seq 1 30); do curl -fsS "http://localhost:$PORT/health" >/dev/null && break; sleep 1; done
+          mkdir -p _site
+          curl -fsS "http://localhost:$PORT$PAGE" -o _site/index.html
+          if grep -q '<span class="marker">no marker set<' _site/index.html; then echo "banner: no marker set"; else echo "banner: marker present"; fi
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+          retention-days: 1
+      - id: deployment
+        uses: actions/deploy-pages@v4
